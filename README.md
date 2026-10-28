@@ -3,6 +3,7 @@
 A reproducible counterfactual bias audit of four open LLMs. It tests whether they treat people differently in how they **describe people, recommend opportunities, assess competence, and represent regional and cultural contexts**, with a focus on Indian and Global South settings.
 
 This is Question 1 of Assignment 3 for *Responsible AI for Foundation Models (DSE428/DSE628)*, IISER Bhopal.
+The report covering all three questions is in [`docs/`](docs): [short version, 4 pages](docs/Assignment3_Short_Report.pdf) and [full report](docs/Assignment3_Report.pdf).
 
 ## Design
 
@@ -77,4 +78,4 @@ Models are downloaded from Hugging Face on first use. All four audited models an
 
 ## AI use
 
-All code was generated with **Claude Opus 5.5** (Anthropic, `claude-opus-5-5`) through Claude Code, following my prompts. The audit prompts were drafted by the model and approved by me. The complete, verbatim prompt log is included in the assignment report submitted for the course.
+All code was generated with **Claude Opus 5.5** (Anthropic, `claude-opus-5-5`) through Claude Code, following my prompts. The audit prompts were drafted by the model and approved by me. The complete, verbatim prompt log is in Appendix A of the [full report](docs/Assignment3_Report.pdf).
