@@ -1,42 +1,7 @@
 """
-bias_audit.py  --  Reproducible bias-auditing pipeline for open LLMs (Assignment 3, Q1)  [v2]
-=============================================================================================
+bias_audit.py  --  Reproducible bias-auditing pipeline for open LLMs
+====================================================================
 
-Pipeline stages (each is a sub-command, each writes files under results/):
-
-  build     Expand the 20 prompt templates (audit_prompts.py) into concrete
-            counterfactual requests: prompt x group x fill x repetition.
-  generate  Run every request through a local Hugging Face model under three
-            conditions (baseline, M1 fairness system prompt, M2 counterfactual
-            self-check). Raw responses + full metadata -> responses/*.jsonl
-  judge     An INDEPENDENT judge model (not one of the audited models) does two
-            jobs: (a) rates the quality of every response on a 1-10 rubric
-            (to check that mitigations do not degrade answers) and (b) answers
-            the yes/no (or count) classification questions declared as
-            `llm_label` metrics in audit_prompts.py.
-  score     Parse the JSON answers, compute every indicator, detect refusals.
-            Writes the master table audit_records.jsonl / .csv (prompt,
-            response, annotations, scores, metadata in one place) and a
-            long-format score table.
-  analyze   Statistics with the FILL (name / city / institution) as the unit
-            of analysis: group means with cluster-bootstrap CIs, disparity
-            (range of group means), stratified permutation tests (labels are
-            permuted only within a fill index, respecting the paired design),
-            excess disparity over the permutation noise floor, Benjamini-
-            Hochberg FDR, parity tests, PAIRED tests for the mitigations, the
-            quality trade-off, scorer agreement, plus figures.
-
-What changed in v2 (after an independent evaluation of v1; v1 is archived in results_v1/):
-  * pseudo-replication: v1 treated 12 near-identical samples of only 3 names as
-    independent; v2 uses 6-8 fills per group and the fill as the unit;
-  * unreliable lexicon primaries (P04/P06/P08/P16/P17) replaced by an LLM classifier;
-  * quality judge is no longer one of the audited models and uses a 1-10 rubric;
-  * mitigation effects are tested with paired permutation tests;
-  * Granite keeps its default system prompt under M1 (only the fairness text is added);
-  * metadata is written per stage (no overwriting) + a full package freeze.
-
-Typical usage (from the q1_bias_audit/ folder):
-  python bias_audit.py all          # or the stages one by one: build, generate, judge, score, analyze
 """
 
 import argparse
@@ -68,10 +33,7 @@ EVAL_DATE = "October 23, 2026"
 
 # ---------------------------------------------------------------------------
 # 1. MODEL REGISTRY
-# ---------------------------------------------------------------------------
-# Four recent, *ungated* instruction-tuned open-weight models from four
-# different developers / countries. All run locally in bfloat16 on one GPU, so
-# versions (HF commit hashes) and decoding settings are fully controlled.
+
 MODELS = {
     "qwen3-8b": {
         "hf_id": "Qwen/Qwen3-8B", "developer": "Alibaba (China)", "released": "2025-04",
@@ -91,7 +53,7 @@ MODELS = {
         "chat_kwargs": {"strftime_now": lambda fmt: EVAL_DATE},
         # Granite is the only audited model with a DEFAULT system prompt. Under M1
         # we keep it and append the fairness instruction, so M1 changes only the
-        # fairness text (v1 replaced the whole system prompt -> confound).
+        # fairness text (replacing the whole system prompt would be a confound).
         "default_system": ("Knowledge Cutoff Date: April 2024.\nToday's Date: " + EVAL_DATE +
                            ".\nYou are Granite, developed by IBM. You are a helpful AI assistant."),
     },
@@ -100,8 +62,7 @@ MODELS = {
         "released": "2024-12", "chat_kwargs": {},
     },
 }
-# Independent judge / classifier: a larger model from a developer that is NOT
-# audited here (AI2, fully open training data), so no model grades itself.
+
 JUDGES = {
     "olmo2-13b": {
         "hf_id": "allenai/OLMo-2-1124-13B-Instruct", "developer": "AI2 (USA, non-profit)",
@@ -265,7 +226,7 @@ def generate_safe(llm, chats, seed, settings):
     # Recurse only AFTER leaving the except block: inside it, the exception's
     # traceback still references the failed attempt's GPU tensors, so their
     # memory could not be freed and every smaller retry would also run out of
-    # memory (this happened in the first v2 run).
+    # memory.
     import gc
     gc.collect()
     llm.torch.cuda.empty_cache()
@@ -797,7 +758,7 @@ def analyze():
     # ---- 6b. disparity tests for every (model, condition, prompt, metric)
     # SD floor for standardisation: 5% of the metric's observed range across the
     # whole study, so a cell with almost no variance cannot turn a tiny gap into a
-    # huge "standardised" effect (a weakness of v1 flagged by the evaluation).
+    # huge "standardised" effect.
     metric_range = long.groupby(["prompt_id", "metric"]).value.agg(lambda v: v.max() - v.min())
     rows, diff_rows = [], []
     for (mdl, cond, pid, met), d in long.groupby(["model", "condition", "prompt_id", "metric"]):
@@ -1141,7 +1102,7 @@ def make_figures(res, grp, mit, qual, par):
 # CLI
 # ---------------------------------------------------------------------------
 def write_run_metadata(stage, args):
-    """One metadata file per stage (v1 overwrote a single file at every stage)."""
+    """One metadata file per stage, so later stages never overwrite earlier ones."""
     RESULTS.mkdir(exist_ok=True)
     meta = {"stage": stage, "written": dt.datetime.now().isoformat(timespec="seconds"),
             "eval_date_shown_to_models": EVAL_DATE, "models": MODELS, "judges": JUDGES,

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full Q1 audit run (v2): 720 requests per model/condition (20 prompts, 6-8 fills
+# Full audit run: 720 requests per model/condition (20 prompts, 6-8 fills
 # per group, 2 samples per fill) x 4 models x 3 conditions = 8,640 generations,
 # then the independent judge (quality + classifier labels), scoring and analysis.
 set -eo pipefail

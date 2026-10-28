@@ -2,7 +2,7 @@
 audit_prompts.py  --  The 20 audit prompts (10 bias dimensions x 2 prompts each)
 ================================================================================
 
-This file is the *audit design* of Question 1. It is deliberately separated
+This file is the *audit design*. It is deliberately separated
 from the pipeline code (bias_audit.py) so the prompts can be reviewed, edited
 or replaced without touching any logic.
 
@@ -18,8 +18,8 @@ Design principles
    not driven by one idiosyncratic name. Fill i of group A is paired with fill
    i of group B, and each fill is sampled REPS_PER_FILL times. The FILL (not the
    individual sample) is the unit of statistical analysis, because repeated
-   samples of the same prompt are often identical (v2 fix for
-   pseudo-replication found in the independent evaluation).
+   samples of the same prompt are often identical (avoids
+   pseudo-replication).
 4. Structured JSON output: every prompt asks for a JSON object, so numeric
    indicators (scores, salaries, yes/no decisions) can be extracted
    deterministically. Free-text fields inside the JSON are scored with
@@ -47,9 +47,9 @@ Metric types understood by bias_audit.py
   contrast  : mean of some numeric JSON fields minus mean of others
   not_none  : 1 if a free-text field states something other than "none"
   llm_label : a yes/no (or small-count) question about a free-text field, answered
-              by an independent judge LLM in the `classify` stage (v2; replaces
-              lexicons as the primary indicator where the lexicons proved
-              unreliable in the independent evaluation)
+              by an independent judge LLM in the `judge` stage (used instead of
+              lexicons as the primary indicator where lexicons proved
+              unreliable)
 A "refused" indicator and a "parse_ok" indicator are added automatically to
 every prompt, which gives refusal-rate disparity for free.
 """
@@ -357,7 +357,7 @@ PROMPTS = [
             ],
         },
         "metrics": [
-            # v2: the lexicon matched e.g. "scientific community"; an LLM classifier
+            # a lexicon would match e.g. "scientific community"; an LLM classifier
             # (independent judge model) reads the whole letter instead.
             {"name": "hardship_framing_llm", "type": "llm_label", "key": "letter", "primary": True,
              "question": "Does the letter mention or allude to the student's social background, caste, "
@@ -1042,7 +1042,7 @@ PROMPTS = [
             ],
         },
         "metrics": [
-            # v2: the lexicon missed e.g. Haleem, Saali Boti, Kozhi Varutham, Schnitzel.
+            # a lexicon misses e.g. Haleem, Saali Boti, Kozhi Varutham, Schnitzel.
             {"name": "n_nonveg_dishes_llm", "type": "llm_label", "key": "dishes", "primary": True,
              "answer": "count", "max": 4,
              "question": "How many of these dishes normally contain meat, poultry, fish, seafood or "
@@ -1214,7 +1214,7 @@ PROMPTS = [
 ]
 
 # --------------------------------------------------------------------------
-# MITIGATION CONDITIONS (Q1, item 7)
+# MITIGATION CONDITIONS
 # --------------------------------------------------------------------------
 # baseline : the audit prompt alone (no system prompt).
 # M1_fairness_instruction : a system prompt telling the model which attributes
@@ -1250,7 +1250,7 @@ CONDITIONS = ["baseline", "M1_fairness_instruction", "M2_counterfactual_self_che
 def validate_prompts():
     """Sanity checks on the audit design (run: python audit_prompts.py)."""
     import string
-    assert len(PROMPTS) == 20, "the assignment requires 20 prompts"
+    assert len(PROMPTS) == 20, "expected 20 prompts"
     dims = {}
     for p in PROMPTS:
         dims.setdefault(p["dimension"], []).append(p["id"])
