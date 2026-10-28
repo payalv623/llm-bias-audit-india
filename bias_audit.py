@@ -995,7 +995,7 @@ def _style(ax):
         ax.spines[s].set_visible(False)
     for s in ("left", "bottom"):
         ax.spines[s].set_color(INK2)
-    ax.tick_params(colors=INK2, labelsize=8)
+    ax.tick_params(colors=INK2, labelsize=11)
     ax.grid(axis="y", color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
 
@@ -1004,6 +1004,9 @@ def make_figures(res, grp, mit, qual, par):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    # larger default text so figures stay readable when scaled to A4 width
+    plt.rcParams.update({"font.size": 12, "xtick.labelsize": 11, "ytick.labelsize": 11,
+                         "axes.labelsize": 12, "legend.fontsize": 11})
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     models = [m for m in MODELS if m in set(res.model)]
     conds = [c for c in AP.CONDITIONS if c in set(res.condition)]
@@ -1015,7 +1018,7 @@ def make_figures(res, grp, mit, qual, par):
     mat = prim.pivot(index="prompt_id", columns="model", values="std_excess").reindex(pids)[models]
     qv = prim.pivot(index="prompt_id", columns="model", values="q_primary").reindex(pids)[models]
     dg = prim.pivot(index="prompt_id", columns="model", values="degenerate").reindex(pids)[models]
-    fig, ax = plt.subplots(figsize=(1.6 * len(models) + 3.8, 8))
+    fig, ax = plt.subplots(figsize=(1.7 * len(models) + 6.5, 10))
     vals = mat.to_numpy(float)
     vmax = max(0.5, np.nanmax(np.abs(vals))) if np.isfinite(vals).any() else 1
     im = ax.imshow(vals, cmap="RdBu_r", aspect="auto", vmin=-vmax, vmax=vmax)
@@ -1024,7 +1027,7 @@ def make_figures(res, grp, mit, qual, par):
     for p in pids:
         met = next(m["name"] for m in pmeta[p]["metrics"] if m.get("primary"))
         ylabels.append(f"{p} {pmeta[p]['dimension']}: {met}")
-    ax.set_yticks(range(len(pids)), ylabels, fontsize=7)
+    ax.set_yticks(range(len(pids)), ylabels, fontsize=11.2)
     for i in range(len(pids)):
         for j in range(len(models)):
             v, q, deg = mat.iat[i, j], qv.iat[i, j], dg.iat[i, j]
@@ -1032,12 +1035,12 @@ def make_figures(res, grp, mit, qual, par):
                 continue
             star = "***" if q < 0.001 else "**" if q < 0.01 else "*" if q < 0.05 else ""
             txt = "const" if bool(deg) else f"{v:.2f}{star}"
-            ax.text(j, i, txt, ha="center", va="center", fontsize=7,
+            ax.text(j, i, txt, ha="center", va="center", fontsize=11.2,
                     color="white" if abs(v) > 0.6 * vmax else INK)
     fig.colorbar(im, ax=ax, label="standardised excess disparity\n(observed range − permutation noise floor) / SD")
     ax.set_title("Baseline disparity on each prompt's primary metric (fill-level)\n"
                  "* BH-FDR q<0.05, ** <0.01, *** <0.001;  'const' = identical answer for every group",
-                 fontsize=9.5, color=INK)
+                 fontsize=15.2, color=INK)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig1_disparity_heatmap.png", dpi=200)
     plt.close(fig)
@@ -1054,10 +1057,10 @@ def make_figures(res, grp, mit, qual, par):
             x = np.arange(len(groups)) + (j - (len(models) - 1) / 2) * width
             ax.errorbar(x, dm["mean"], yerr=[dm["mean"] - dm.ci_low, dm.ci_high - dm["mean"]],
                         fmt="o", ms=4, color=SERIES[j], elinewidth=1.2, capsize=0, label=mdl)
-        ax.set_xticks(range(len(groups)), [g.replace("_", "\n") for g in groups], fontsize=6.5)
-        ax.set_title(f"{pid} - {met}", fontsize=8.5, color=INK)
+        ax.set_xticks(range(len(groups)), [g.replace("_", "\n") for g in groups], fontsize=10.4)
+        ax.set_title(f"{pid} - {met}", fontsize=13.6, color=INK)
         _style(ax)
-    axes.flat[0].legend(fontsize=7, frameon=False)
+    axes.flat[0].legend(fontsize=11.2, frameon=False)
     fig.suptitle("Baseline group means of the primary metric (95% cluster-bootstrap CI over fills)", color=INK)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig2_group_means.png", dpi=170)
@@ -1072,13 +1075,13 @@ def make_figures(res, grp, mit, qual, par):
         bars = ax.bar(x, d.mean_std_excess, width=width * 0.92, color=SERIES[k], label=cond)
         for b_, n in zip(bars, d.n_sig_primary):
             ax.text(b_.get_x() + b_.get_width() / 2, b_.get_height(), f"{int(n)} sig",
-                    ha="center", va="bottom", fontsize=6.5, color=INK2)
+                    ha="center", va="bottom", fontsize=10.4, color=INK2)
     ax.axhline(0, color=INK2, lw=0.8)
     ax.set_xticks(range(len(models)), models)
     ax.set_ylabel("mean standardised excess disparity\n(20 primary metrics; label = # significant)",
-                  color=INK2, fontsize=8)
-    ax.set_title("Effect of mitigation on measured disparity", color=INK, fontsize=10)
-    ax.legend(fontsize=7, frameon=False)
+                  color=INK2, fontsize=12.8)
+    ax.set_title("Effect of mitigation on measured disparity", color=INK, fontsize=16)
+    ax.legend(fontsize=11.2, frameon=False)
     _style(ax)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig3_mitigation_disparity.png", dpi=200)
@@ -1098,10 +1101,10 @@ def make_figures(res, grp, mit, qual, par):
         ax.scatter([], [], color=SERIES[j], label=mdl)
     for k, cond in enumerate(conds):
         ax.scatter([], [], color=INK2, marker=markers[k % 3], label=cond)
-    ax.set_xlabel("mean judge quality (1-10, independent OLMo-2-13B judge)", color=INK2, fontsize=8)
-    ax.set_ylabel("mean standardised excess disparity", color=INK2, fontsize=8)
-    ax.set_title("Fairness vs answer quality (lower-right is better)", color=INK, fontsize=10)
-    ax.legend(fontsize=7, frameon=False)
+    ax.set_xlabel("mean judge quality (1-10, independent OLMo-2-13B judge)", color=INK2, fontsize=12.8)
+    ax.set_ylabel("mean standardised excess disparity", color=INK2, fontsize=12.8)
+    ax.set_title("Fairness vs answer quality (lower-right is better)", color=INK, fontsize=16)
+    ax.legend(fontsize=11.2, frameon=False)
     _style(ax)
     fig.tight_layout()
     fig.savefig(FIG_DIR / "fig4_fairness_quality.png", dpi=200)
@@ -1123,10 +1126,10 @@ def make_figures(res, grp, mit, qual, par):
             ax.plot([i - 0.45, i + 0.45], [t, t], color=INK2, linestyle="--", linewidth=1)
         ax.set_xticks(range(len(mets)), [m.replace("_is_female", "\n(to a woman)")
                                          .replace("lead_is_first_listed", "lead = first\nlisted person")
-                                         for m in mets], fontsize=8)
-        ax.set_ylabel("share of responses (95% cluster-bootstrap CI)", color=INK2, fontsize=8)
-        ax.set_title("P02 role allocation vs no-bias target (dashed; baseline)", color=INK, fontsize=10)
-        ax.legend(fontsize=7, frameon=False)
+                                         for m in mets], fontsize=12.8)
+        ax.set_ylabel("share of responses (95% cluster-bootstrap CI)", color=INK2, fontsize=12.8)
+        ax.set_title("P02 role allocation vs no-bias target (dashed; baseline)", color=INK, fontsize=16)
+        ax.legend(fontsize=11.2, frameon=False)
         _style(ax)
         fig.tight_layout()
         fig.savefig(FIG_DIR / "fig5_role_parity.png", dpi=200)
