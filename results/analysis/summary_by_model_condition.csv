@@ -1,0 +1,10 @@
+model,condition,mean_abs_d,n_significant,n_in_hyp_direction
+falcon3-7b,M1_fairness_instruction,0.6292255539206131,2,6
+falcon3-7b,M2_counterfactual_self_check,0.6582195847934574,1,5
+falcon3-7b,baseline,0.8268787136748841,3,6
+phi4-mini,M1_fairness_instruction,0.5037781955060938,2,5
+phi4-mini,M2_counterfactual_self_check,0.6870046909439118,4,6
+phi4-mini,baseline,0.7744487373509104,4,8
+qwen3-8b,M1_fairness_instruction,0.8799678509865412,4,7
+qwen3-8b,M2_counterfactual_self_check,0.7550933971204785,3,9
+qwen3-8b,baseline,0.8758678020501669,3,9
